@@ -299,30 +299,37 @@ void PBXProj::initTargets()
 	const PBXValueRef* bp_ref     = dynamic_cast<const PBXValueRef*>(*bp_itor);
 	const PBXValue *bp_value = pDoc->deref(bp_ref);
 	const PBXBlock *bp_blk = PBXBlock::cast(bp_value);
-	    
-	//record bp_blk_type here. 
-	string bp_blk_type = "";	  
-	const PBXText* bp_isa = dynamic_cast<const PBXText*>(bp_blk->valueForKey("isa"));
-	if(!bp_isa) {
-	  this->targetcount -= 1;
-	  continue;
-	}
-	
-	bp_blk_type = bp_isa->text();
 
-	const PBXArray* files_arr = dynamic_cast<const PBXArray*>(bp_blk->valueForKey("files"));
-	if(!files_arr) {
+	//record bp_blk_type here. 
+	string bp_blk_type = "";
+	if (bp_blk && bp_blk->valueForKey("isa")) {
+	  const PBXText* bp_isa = dynamic_cast<const PBXText*>(bp_blk->valueForKey("isa"));
+	  if (!bp_isa) {
+	    this->targetcount -= 1;
+	    continue;
+          }
+
+	  bp_blk_type = bp_isa->text();
+
+	  const PBXArray* files_arr = dynamic_cast<const PBXArray*>(bp_blk->valueForKey("files"));
+	  if(!files_arr) {
+	    this->targetcount -= 1;
+	    continue;
+	  }
+	  if(bp_blk_type == "PBXFrameworksBuildPhase")
+	    getFilesFromFileArray(files_arr, FRAMEWORKS, &target_detail);
+	  else if(bp_blk_type == "PBXSourcesBuildPhase")
+	    getFilesFromFileArray(files_arr, SOURCES, &target_detail);
+	  else if(bp_blk_type == "PBXResourcesBuildPhase")
+	    getFilesFromFileArray(files_arr, RESOURCES, &target_detail);
+	  else if(bp_blk_type == "PBXHeadersBuildPhase")
+	    getFilesFromFileArray(files_arr, HEADERS, &target_detail);
+	  bp_blk_type = bp_isa->text();
+
+	} else {
 	  this->targetcount -= 1;
 	  continue;
 	}
-	if(bp_blk_type == "PBXFrameworksBuildPhase")
-	  getFilesFromFileArray(files_arr, FRAMEWORKS, &target_detail);
-	else if(bp_blk_type == "PBXSourcesBuildPhase")
-	  getFilesFromFileArray(files_arr, SOURCES, &target_detail);
-	else if(bp_blk_type == "PBXResourcesBuildPhase")
-	  getFilesFromFileArray(files_arr, RESOURCES, &target_detail);
-	else if(bp_blk_type == "PBXHeadersBuildPhase")
-	  getFilesFromFileArray(files_arr, HEADERS, &target_detail);
       }
     }
     this->targets.push_back(target_detail);
