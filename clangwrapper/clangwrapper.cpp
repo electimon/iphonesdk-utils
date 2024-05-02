@@ -34,17 +34,13 @@ int main(int argc, char **argv)
   string clang = find_command("clang","clang","clang");
   string ldid = find_command("ldid","ldid","ldid");
   string as = find_command("arm-apple-darwin9-as","arm-apple","as");
-  string target = as.substr(as.find("arm"), as.length()-3-as.find("arm"));
-
-  
   if(clang.empty() || ldid.empty() || as.empty()) {
     cout <<"Can not find proper toolchain commands."<<endl;
     cout <<"You may need install clang, ldid, cctools" <<endl;
     cout <<"And setup PATH environment variable according to your installation" <<endl;
     exit(0);
   }
-
-
+  string target = as.substr(as.find("arm"), as.length()-3-as.find("arm"));
   string sdk_fullpath = "/usr/share/iPhoneOS5.0.sdk";
   string version = "5.0";
 
