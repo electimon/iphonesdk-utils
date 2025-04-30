@@ -20,6 +20,7 @@ using namespace std;
 enum targetType {
   APP,
   STATICLIB,
+  DYNAMICLIB,
   EXEC,
   FRAMEWORK
 };
@@ -795,9 +796,11 @@ void convertMakefile(PBXNativeTarget target, targetType type)
       makefile <<"LDFLAGS += -framework " + framework <<endl;
   }
 
-  if(type == FRAMEWORK) {
+  if(type == FRAMEWORK || type == DYNAMICLIB) {
     makefile <<"LDFLAGS += -dynamiclib" <<endl;
-    makefile <<"LDFLAGS += -install_name /Library/Frameworks/$(PROJECTNAME).framework/$(PROJECTNAME)"<<endl;
+    if (type == FRAMEWORK) {
+        makefile <<"LDFLAGS += -install_name /Library/Frameworks/$(PROJECTNAME).framework/$(PROJECTNAME)"<<endl;
+    }
     if(!target.dylib_compatibility_version.empty())
       makefile <<"LDFLAGS += -compatibility_version "<<target.dylib_compatibility_version <<endl;
     if(!target.dylib_current_version.empty())
@@ -818,6 +821,8 @@ void convertMakefile(PBXNativeTarget target, targetType type)
     makefile << "all: $(PROJECTNAME) headers"<<endl<<endl;
   else if(type == FRAMEWORK)
     makefile << "all: $(PROJECTNAME) framework"<<endl<<endl;
+  else if(type == DYNAMICLIB)
+    makefile << "all: $(PROJECTNAME) headers"<<endl<<endl;
   else
     makefile << "all: $(PROJECTNAME)"<<endl<<endl;
 
@@ -852,6 +857,9 @@ void convertMakefile(PBXNativeTarget target, targetType type)
   } else if(type == STATICLIB) {
     makefile << "\tmkdir -p xcbuild"<<endl;
     makefile << "\tarm-apple-darwin11-ar cr xcbuild/"<<output<<" $(filter %.o,$^)"<<endl<<endl;
+  } else if(type == DYNAMICLIB) {
+    makefile << "\tmkdir -p xcbuild"<<endl;
+    makefile << "\t$(CC) $(LDFLAGS) $(filter %.o,$^) -o xcbuild/$@"<<endl<<endl;
   }
 
   for(int i = 0; i < sourcepaths.size(); i++) {
@@ -866,6 +874,19 @@ void convertMakefile(PBXNativeTarget target, targetType type)
   }
 
   if(type == STATICLIB) {
+    makefile << "headers:"<<endl;
+    makefile << "\tmkdir -p xcbuild/headers/private" <<endl;
+    
+    for(int i = 0; i < target.headers.size(); i++) {
+      if(target.headers[i].is_public_header)
+        makefile << "\tcp -r " << target.headers[i].path << " xcbuild/headers" <<endl;
+      else
+        makefile << "\tcp -r " << target.headers[i].path << " xcbuild/headers/private" <<endl;
+    }
+    makefile <<endl;
+  }
+
+  if(type == DYNAMICLIB) {
     makefile << "headers:"<<endl;
     makefile << "\tmkdir -p xcbuild/headers/private" <<endl;
     
@@ -966,8 +987,10 @@ void convertTarget(PBXNativeTarget target, int compile)
     convertMakefile(target, EXEC);
   else if(target.resulttype == "wrapper.framework")
     convertMakefile(target, FRAMEWORK);
+  else if(target.resulttype == "compiled.mach-o.dylib")
+    convertMakefile(target, DYNAMICLIB);
   else
-    cout <<"Not supported yet."<<endl;
+    cout <<"Not supported yet, " << target.resulttype <<endl;
   if(compile)
     runCommand("make");
 }
