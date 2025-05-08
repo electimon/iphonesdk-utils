@@ -828,7 +828,8 @@ void convertMakefile(PBXNativeTarget target, targetType type)
 
   makefile << "OBJS+=  \\"<<endl;
   for(int i = 0; i < sourcepaths.size(); i++) {
-    string object = m_replace(sourcepaths[i], ".m", ".o", -1);
+    string object = m_replace(sourcepaths[i], ".mm", ".o", -1);
+    object = m_replace(object, ".m", ".o", -1);
     object = m_replace(object, ".c", ".o", -1);
     object = m_replace(object, ".cpp", ".o", -1);
     if(i == sourcepaths.size()-1)
@@ -839,7 +840,8 @@ void convertMakefile(PBXNativeTarget target, targetType type)
   makefile << endl;
   makefile << "$(PROJECTNAME): \\"<<endl;
   for(int i = 0; i < sourcepaths.size(); i++) {
-    string object = m_replace(sourcepaths[i], ".m", ".o", -1);
+    string object = m_replace(sourcepaths[i], ".mm", ".o", -1);
+    object = m_replace(object, ".m", ".o", -1);
     object = m_replace(object, ".c", ".o", -1);
     object = m_replace(object, ".cpp", ".o", -1);
     if(i == sourcepaths.size()-1)
@@ -863,11 +865,12 @@ void convertMakefile(PBXNativeTarget target, targetType type)
   }
 
   for(int i = 0; i < sourcepaths.size(); i++) {
-    string object = m_replace(sourcepaths[i], ".m", ".o", -1);
+    string object = m_replace(sourcepaths[i], ".mm", ".o", -1);
+    object = m_replace(object, ".m", ".o", -1);
     object = m_replace(object, ".c", ".o", -1);
     object = m_replace(object, ".cpp", ".o", -1);
     makefile << object <<": "<<sourcepaths[i]<<endl;
-    if(endWith(sourcepaths[i],".cpp"))
+    if(endWith(sourcepaths[i],".cpp") || endWith(sourcepaths[i],".mm"))
       makefile << "\t$(CPP) -c $(CPPFLAGS) "<< target.sources[i].cflag << " $< -o $@"<<endl<<endl;
     else
       makefile << "\t$(CC) -c $(CFLAGS) "<<target.sources[i].cflag<< " $< -o $@"<<endl<<endl;
